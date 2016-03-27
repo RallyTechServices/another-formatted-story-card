@@ -1,5 +1,9 @@
 #TS Print Story Cards
 
+Prints out story cards for an iteration.  Four per page -- landscape.  
+
+This includes a hard-coded custom field.
+
 ## Development Notes
 
 ### First Load

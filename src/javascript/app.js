@@ -39,8 +39,9 @@ Ext.define("TSPrintStoryCards", {
             var config = {
                 model: 'HierarchicalRequirement',
                 filters: [{property:'Iteration.Name',value:iteration_name}],
-                fetch: ['FormattedID','Feature','Name','Release','PlanEstimate','Description']
+                fetch: Rally.technicalservices.CardConfiguration.fetchFields
             };
+            
             this._loadWsapiRecords(config).then({
                 scope: this,
                 success: function(stories){

@@ -1,10 +1,9 @@
 Ext.define('Rally.technicalservices.CardConfiguration',{
     singleton: true,
 
-    fetchFields: ["FormattedID","Name","State","Owner","Description",
-        "Notes","Milestones","TargetDate","Project",'c_MoSCoW'],
-    
-    
+    fetchFields: ["FormattedID","Name","Feature","Description",
+        "Release","PlanEstimate",'c_ExtID01QCRequirement'],
+                
     displayFields: {
         r1left: { 
             dataIndex: 'FormattedID'
@@ -16,7 +15,7 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
                     return ' ';
                 }
                 
-                return feature.FormattedID + ": " + feature.Name;
+                return feature.FormattedID + ": " + Ext.util.Format.substr(feature.Name,0,5);
             },
             maxLength: 12
         },
@@ -25,28 +24,35 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
                 var release = recordData.get('Release');
                 var release_name = "No Release";
                 if ( !Ext.isEmpty(release) ) {
-                    release_name = Ext.util.Format.ellipsis(release.Name,12);
+                    release_name = release.Name;
                 }
                 return release_name;
-            }
+            },
+            maxLength: 15
         },
         r2middle: {
             dataIndex: function(recordData) {
+                var name = recordData.get('Name');
                 var description = recordData.get('Description');
                 
-                if ( Ext.isEmpty(description) ) {
-                    return "--";
-                }
-                
-                return description.replace(/<(?:.|\n)*?>/gm, '');
-            },
-            maxLength: 325
+                return Ext.String.format('<strong>{0}</strong><br/><br/>{1}',
+                    name,
+                    description
+                );
+            }
         },
-        r3middle: {
+        r3left: {
             dataIndex: function(recordData) {
-                return 'abc'
-            },
-            maxLength: 255
+                var qc_id = recordData.get('c_ExtID01QCRequirement') || "";
+                
+                return 'QC: ' + qc_id;
+            }
+        },
+        r3right: {
+            dataIndex: function(recordData) {
+                return recordData.get('PlanEstimate');
+            }
         }
+        
     }
 });

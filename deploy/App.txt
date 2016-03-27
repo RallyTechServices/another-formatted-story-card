@@ -3,11 +3,11 @@
 <head>
     <title>TS Print Story Cards</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sat Mar 26 2016 19:42:38 GMT-0700 (PDT) -->
+    <!--  Build Date: Sun Mar 27 2016 10:10:06 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sat Mar 26 2016 19:42:38 GMT-0700 (PDT)";
-        var CHECKSUM = 7370509372;
+        var APP_BUILD_DATE = "Sun Mar 27 2016 10:10:06 GMT-0700 (PDT)";
+        var CHECKSUM = 7797147974;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -179,10 +179,9 @@ Ext.define('Rally.technicalservices.Logger',{
 Ext.define('Rally.technicalservices.CardConfiguration',{
     singleton: true,
 
-    fetchFields: ["FormattedID","Name","State","Owner","Description",
-        "Notes","Milestones","TargetDate","Project",'c_MoSCoW'],
-    
-    
+    fetchFields: ["FormattedID","Name","Feature","Description",
+        "Release","PlanEstimate",'c_ExtID01QCRequirement'],
+                
     displayFields: {
         r1left: { 
             dataIndex: 'FormattedID'
@@ -194,7 +193,7 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
                     return ' ';
                 }
                 
-                return feature.FormattedID + ": " + feature.Name;
+                return feature.FormattedID + ": " + Ext.util.Format.substr(feature.Name,0,5);
             },
             maxLength: 12
         },
@@ -203,29 +202,36 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
                 var release = recordData.get('Release');
                 var release_name = "No Release";
                 if ( !Ext.isEmpty(release) ) {
-                    release_name = Ext.util.Format.ellipsis(release.Name,12);
+                    release_name = release.Name;
                 }
                 return release_name;
-            }
+            },
+            maxLength: 15
         },
         r2middle: {
             dataIndex: function(recordData) {
+                var name = recordData.get('Name');
                 var description = recordData.get('Description');
                 
-                if ( Ext.isEmpty(description) ) {
-                    return "--";
-                }
-                
-                return description.replace(/<(?:.|\n)*?>/gm, '');
-            },
-            maxLength: 325
+                return Ext.String.format('<strong>{0}</strong><br/><br/>{1}',
+                    name,
+                    description
+                );
+            }
         },
-        r3middle: {
+        r3left: {
             dataIndex: function(recordData) {
-                return 'abc'
-            },
-            maxLength: 255
+                var qc_id = recordData.get('c_ExtID01QCRequirement') || "";
+                
+                return 'QC: ' + qc_id;
+            }
+        },
+        r3right: {
+            dataIndex: function(recordData) {
+                return recordData.get('PlanEstimate');
+            }
         }
+        
     }
 });
 
@@ -255,8 +261,11 @@ Ext.define('Rally.technicalservices.CardTemplate',{
                 '</div>',
                 
                 '<div class="r3">',
-                    '<tpl if="this.displayFields.r3middle">',
-                        '<span class="r3middle">{[this.getContent(values, this.displayFields.r3middle)]}</span>',
+                    '<tpl if="this.displayFields.r3left>',
+                        '<span class="r3left">{[this.getContent(values, this.displayFields.r3left)]}</span>',
+                    '</tpl>',
+                    '<tpl if="this.displayFields.r3right">',
+                        '<span class="r3right">{[this.getContent(values, this.displayFields.r3right)]}</span>',
                     '</tpl>',
                 '</div>',
             '</div>',
@@ -344,7 +353,7 @@ Ext.define('Rally.technicalservices.window.PrintCards',{
             html += t.apply(r);
 
             card_num ++;
-            if ((card_num) % 6 === 0) {
+            if ((card_num) % 4 === 0) {
                 html += '<div class=pb></div>';
             } else if (card_num === total_cards - 1) {
                 html += '<div class=cb>&nbsp;</div>';
@@ -409,8 +418,9 @@ Ext.define("TSPrintStoryCards", {
             var config = {
                 model: 'HierarchicalRequirement',
                 filters: [{property:'Iteration.Name',value:iteration_name}],
-                fetch: ['FormattedID','Feature','Name','Release','PlanEstimate','Description']
+                fetch: Rally.technicalservices.CardConfiguration.fetchFields
             };
+            
             this._loadWsapiRecords(config).then({
                 scope: this,
                 success: function(stories){
@@ -559,12 +569,10 @@ body {
 }
 
 .artifact {
-    display: table;
     background-color: #fff;
     border: 2px solid #000;
     float: left;
-    height: 3in;
-    width: 4in;
+    width: 4.75in;
     margin: 0.1in 0.1in 0.1in 0.1in;
     position: relative;
     overflow: hidden;
@@ -574,9 +582,10 @@ body {
     border: 1px;
     border-bottom-style: solid;
     margin-bottom: 2px;
-    height: 40px;
-    font: 12pt / 1.26 Arial, Helvetica, sans-serif;
+    height: 0.5in;
+    font: 14pt / 1.26 Arial, Helvetica, sans-serif;
     color: #000000;
+    text-align: center;
 }
 
 .r1left {
@@ -585,7 +594,7 @@ body {
     padding-left: 0.5em;
     overflow: hidden;
     border-right: 1px solid #000;
-    width: 1.33in;
+    width: 1.5in;
 }
 
 .r1middle {
@@ -593,8 +602,8 @@ body {
     padding-top: 0.5em;
     padding-left: 0.5em;
     overflow: hidden;
+    width: 1.75in;
     border-right: 1px solid #000;
-    width: 1.33in;
 }
 
 .r1right {
@@ -602,7 +611,7 @@ body {
     padding-top: 0.5em;
     padding-left: 0.5em;
     overflow: hidden;
-    width: 1.33in;
+    width: 1.5in;
 }
 
 .r2{
@@ -610,30 +619,45 @@ body {
     border-top-style: solid;
     border-bottom-style: solid;
     margin-top: 2px;
-    height: 140px;
     font-family: NotoSans, Helvetica, Arial;
     font-size: 12pt;
     padding-left: 0.5em;
+    overflow: hidden;
     padding-right: 0.5em;
 }
+
 .r2middle {
     display: block;
     vertical-align: middle;
     text-align: left;
+    height: 2.5in;
 }
-.r4{
+
+.r3{
     border: 1px;
     border-bottom-style: solid;
-    height: 120px;
-    font-family: NotoSans, Helvetica, Arial;
-    font-size: 12pt;
+    height: 0.5in;
     padding-left: 0.5em;
+    text-align: center;
 }
-.r4middle {
+
+.r3left {
     display: table-cell;
-    vertical-align: middle;
-    text-align: left;
+    padding-top: 0.5em;
+    padding-left: 0.5em;
+    overflow: hidden;
+    border-right: 1px solid #000;
+    width: 2.3in;
 }
+
+.r3right {
+    display: table-cell;
+    padding-top: 0.5em;
+    padding-left: 0.5em;
+    overflow: hidden;
+    width: 2.3in;
+}
+
 .header {
     border: 1px;
     border-bottom-style: solid;

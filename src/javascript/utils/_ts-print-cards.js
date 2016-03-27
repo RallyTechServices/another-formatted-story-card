@@ -58,7 +58,7 @@ Ext.define('Rally.technicalservices.window.PrintCards',{
             html += t.apply(r);
 
             card_num ++;
-            if ((card_num) % 6 === 0) {
+            if ((card_num) % 4 === 0) {
                 html += '<div class=pb></div>';
             } else if (card_num === total_cards - 1) {
                 html += '<div class=cb>&nbsp;</div>';

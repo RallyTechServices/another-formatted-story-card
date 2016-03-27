@@ -24,8 +24,11 @@ Ext.define('Rally.technicalservices.CardTemplate',{
                 '</div>',
                 
                 '<div class="r3">',
-                    '<tpl if="this.displayFields.r3middle">',
-                        '<span class="r3middle">{[this.getContent(values, this.displayFields.r3middle)]}</span>',
+                    '<tpl if="this.displayFields.r3left>',
+                        '<span class="r3left">{[this.getContent(values, this.displayFields.r3left)]}</span>',
+                    '</tpl>',
+                    '<tpl if="this.displayFields.r3right">',
+                        '<span class="r3right">{[this.getContent(values, this.displayFields.r3right)]}</span>',
                     '</tpl>',
                 '</div>',
             '</div>',
