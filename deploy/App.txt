@@ -3,11 +3,11 @@
 <head>
     <title>TS Print Story Cards</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sun Mar 27 2016 10:10:06 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon Apr 11 2016 19:19:41 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sun Mar 27 2016 10:10:06 GMT-0700 (PDT)";
-        var CHECKSUM = 7797147974;
+        var APP_BUILD_DATE = "Mon Apr 11 2016 19:19:41 GMT-0700 (PDT)";
+        var CHECKSUM = 7832751581;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -713,6 +713,8 @@ body {
     overflow: hidden;
 }
 </style>
+<style type="text/css">
+
 .app {
 }
 .tsinfolink {
@@ -730,6 +732,8 @@ body {
     margin-right: 5px;
     cursor: pointer;
 }
+
+</style>
     <!-- </style> -->
 
 </head>
