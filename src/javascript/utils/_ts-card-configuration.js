@@ -2,7 +2,7 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
     singleton: true,
 
     fetchFields: ["FormattedID","Name","Feature","Description",
-        "Release","PlanEstimate",'c_ExtID01QCRequirement'],
+        "Release","PlanEstimate",'c_ExtID01QCRequirement','Requirement'],
                 
     displayFields: {
         r1left: { 
@@ -11,6 +11,11 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
         r1middle: {
             dataIndex: function(recordData) {
                 var feature = recordData.get('Feature');
+                console.log(recordData);
+                
+                if ( recordData.get('_type') == 'defect' && recordData.get('Requirement') ) {
+                    feature = recordData.get('Requirement').Feature;
+                }
                 if ( Ext.isEmpty(feature) ) {
                     return ' ';
                 }

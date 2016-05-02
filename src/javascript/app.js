@@ -31,24 +31,34 @@ Ext.define("TSPrintStoryCards", {
     },
     
     _printCards: function() {
+        var me = this;
+        
         var iteration = this.down('rallyiterationcombobox').getRecord();
         if ( iteration ) {
             var iteration_name = iteration.get('Name');
             this.logger.log('Print Stories from Iteration: ', iteration);
             
-            var config = {
+            var story_config = {
                 model: 'HierarchicalRequirement',
                 filters: [{property:'Iteration.Name',value:iteration_name}],
                 fetch: Rally.technicalservices.CardConfiguration.fetchFields
             };
+            var defect_config = {
+                model: 'Defect',
+                filters: [{property:'Iteration.Name',value:iteration_name}],
+                fetch: Rally.technicalservices.CardConfiguration.fetchFields
+            };
             
-            this._loadWsapiRecords(config).then({
+            Deft.Chain.parallel([
+                function() { return me._loadWsapiRecords(story_config); },
+                function() { return me._loadWsapiRecords(defect_config); }
+            ]).then({
                 scope: this,
-                success: function(stories){
-                    this._openPrintCards(stories);
+                success: function(items){
+                    this._openPrintCards(Ext.Array.flatten(items));
                 },
                 failure: function(msg) {
-                    Ext.Msg.alert('Problem loading stories', msg);
+                    Ext.Msg.alert('Problem loading items', msg);
                 }
             });
         }

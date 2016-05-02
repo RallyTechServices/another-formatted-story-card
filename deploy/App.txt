@@ -3,11 +3,11 @@
 <head>
     <title>TS Print Story Cards</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Apr 11 2016 19:35:51 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon May 02 2016 13:42:27 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Apr 11 2016 19:35:51 GMT-0700 (PDT)";
-        var CHECKSUM = 7830673481;
+        var APP_BUILD_DATE = "Mon May 02 2016 13:42:27 GMT-0700 (PDT)";
+        var CHECKSUM = 8368170153;
     </script>
     
     <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
@@ -180,7 +180,7 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
     singleton: true,
 
     fetchFields: ["FormattedID","Name","Feature","Description",
-        "Release","PlanEstimate",'c_ExtID01QCRequirement'],
+        "Release","PlanEstimate",'c_ExtID01QCRequirement','Requirement'],
                 
     displayFields: {
         r1left: { 
@@ -189,6 +189,11 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
         r1middle: {
             dataIndex: function(recordData) {
                 var feature = recordData.get('Feature');
+                console.log(recordData);
+                
+                if ( recordData.get('_type') == 'defect' && recordData.get('Requirement') ) {
+                    feature = recordData.get('Requirement').Feature;
+                }
                 if ( Ext.isEmpty(feature) ) {
                     return ' ';
                 }
@@ -410,24 +415,34 @@ Ext.define("TSPrintStoryCards", {
     },
     
     _printCards: function() {
+        var me = this;
+        
         var iteration = this.down('rallyiterationcombobox').getRecord();
         if ( iteration ) {
             var iteration_name = iteration.get('Name');
             this.logger.log('Print Stories from Iteration: ', iteration);
             
-            var config = {
+            var story_config = {
                 model: 'HierarchicalRequirement',
                 filters: [{property:'Iteration.Name',value:iteration_name}],
                 fetch: Rally.technicalservices.CardConfiguration.fetchFields
             };
+            var defect_config = {
+                model: 'Defect',
+                filters: [{property:'Iteration.Name',value:iteration_name}],
+                fetch: Rally.technicalservices.CardConfiguration.fetchFields
+            };
             
-            this._loadWsapiRecords(config).then({
+            Deft.Chain.parallel([
+                function() { return me._loadWsapiRecords(story_config); },
+                function() { return me._loadWsapiRecords(defect_config); }
+            ]).then({
                 scope: this,
-                success: function(stories){
-                    this._openPrintCards(stories);
+                success: function(items){
+                    this._openPrintCards(Ext.Array.flatten(items));
                 },
                 failure: function(msg) {
-                    Ext.Msg.alert('Problem loading stories', msg);
+                    Ext.Msg.alert('Problem loading items', msg);
                 }
             });
         }
