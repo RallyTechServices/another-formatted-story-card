@@ -1,6 +1,8 @@
 #TS Print Story Cards
 
-Prints out story cards for an iteration.  Four per page -- landscape.  
+Prints out story cards for an iteration or an Epic or both.  
+
+Four per page -- landscape.  
 
 This includes a hard-coded custom field.
 

@@ -4,21 +4,45 @@ Ext.define("TSPrintStoryCards", {
     logger: new Rally.technicalservices.Logger(),
     defaults: { margin: 10 },
 
-    layout: 'hbox',
+    layout: 'vbox',
     
     integrationHeaders : {
         name : "TSPrintStoryCards"
     },
-                        
+    
+    config: {
+        defaultSettings: {
+            selectorType: null
+        }
+    },
+    
     launch: function() {
         
-        this.add({
-            xtype:'rallyiterationcombobox',
-            fieldLabel: 'Iteration:',
-            labelWidth: 55,
-            width: 200
+        var container = this.add({
+            xtype:'container',
+            layout: 'hbox'
         });
         
+        container.add({
+            xtype:'rallyiterationcombobox',
+            fieldLabel: 'Iteration:',
+            margin: 10,
+            labelWidth: 55,
+            width: 275,
+            allowClear: true
+        });
+        
+        container.add({
+            xtype: 'portfolioitemselector',
+            context: this.getContext(),
+            type: this.getSetting('selectorType'),
+            stateful: false,
+            stateId: this.getContext().getScopedStateId('app-selector'),
+            width: '75%',
+            margin: 10,
+            fieldLabel: this.getSetting('selectorType').replace(/PortfolioItem\//,'') + ":"
+        });
+            
         this.add({
             xtype: 'rallybutton',
             text:'Print Cards',
@@ -34,21 +58,51 @@ Ext.define("TSPrintStoryCards", {
         var me = this;
         
         var iteration = this.down('rallyiterationcombobox').getRecord();
+        var pi = this.down('portfolioitemselector').getRecord();
+        
+        this.logger.log('pi:', pi);
+        
+        var filters = {};
+        
         if ( iteration ) {
             var iteration_name = iteration.get('Name');
-            this.logger.log('Print Stories from Iteration: ', iteration);
+            this.logger.log('Print Items from Iteration: ', iteration);
+            filters.story  = Ext.create('Rally.data.wsapi.Filter',{property:'Iteration.Name',value:iteration_name});
+            filters.defect = Ext.create('Rally.data.wsapi.Filter',{property:'Iteration.Name',value:iteration_name});
+        }
+        
+        if ( pi && pi.get('ObjectID') > 0 ) {
+            this.logger.log('Print Items from PI:', pi.get('_refObjectName'));
+            var story_filters = Rally.data.wsapi.Filter.or([
+                {property:'Feature.ObjectID',value:pi.get('ObjectID')},
+                {property:'Feature.Parent.ObjectID',value:pi.get('ObjectID')},
+                {property:'Feature.Parent.Parent.ObjectID',value:pi.get('ObjectID')}
+            ]);
             
+            if ( !Ext.isEmpty(filters.story) ) {
+                filters.story = filters.story.and(story_filters);
+            } else {
+                filters.story = story_filters;
+            }
+            
+            filters.defect = { property:'ObjectID', value: 0 }; // can't query defects on pi
+            
+        }
+        
+        if (!Ext.isEmpty(filters) && filters != {} && !Ext.isEmpty(filters.story) ) {
+
             var story_config = {
                 model: 'HierarchicalRequirement',
-                filters: [{property:'Iteration.Name',value:iteration_name}],
-                fetch: Rally.technicalservices.CardConfiguration.fetchFields
-            };
-            var defect_config = {
-                model: 'Defect',
-                filters: [{property:'Iteration.Name',value:iteration_name}],
+                filters: filters.story,
                 fetch: Rally.technicalservices.CardConfiguration.fetchFields
             };
             
+            var defect_config = {
+                model: 'Defect',
+                filters: filters.defect,
+                fetch: Rally.technicalservices.CardConfiguration.fetchFields
+            };
+                
             Deft.Chain.parallel([
                 function() { return me._loadWsapiRecords(story_config); },
                 function() { return me._loadWsapiRecords(defect_config); }
@@ -152,5 +206,27 @@ Ext.define("TSPrintStoryCards", {
         this.logger.log('onSettingsUpdate',settings);
         // Ext.apply(this, settings);
         this.launch();
+    },
+    
+    getSettingsFields: function() {
+        return [{
+            name: 'selectorType',
+            xtype: 'rallycombobox',
+            allowBlank: false,
+            autoSelect: false,
+            fieldLabel: 'Selector Type',
+            //context: context,
+            storeConfig: {
+                model: Ext.identityFn('TypeDefinition'),
+                sorters: [{ property: 'Ordinal' }],
+                fetch: ['DisplayName', 'ElementName', 'TypePath', 'Parent', 'UserListable'],
+                filters: [{property: 'TypePath', operator: 'contains', value: 'PortfolioItem/'}],
+                autoLoad: false,
+                remoteFilter: true
+            },
+            displayField: 'DisplayName',
+            valueField: 'TypePath',
+            readyEvent: 'ready'
+        }];
     }
 });

@@ -3,14 +3,14 @@
 <head>
     <title>TS Print Story Cards</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon May 02 2016 13:42:27 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon May 09 2016 17:24:30 GMT-0700 (PDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon May 02 2016 13:42:27 GMT-0700 (PDT)";
-        var CHECKSUM = 8368170153;
+        var APP_BUILD_DATE = "Mon May 09 2016 17:24:30 GMT-0700 (PDT)";
+        var CHECKSUM = 16322953495;
     </script>
     
-    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
 
     <script type="text/javascript">
         Rally.onReady(function() {
@@ -382,27 +382,235 @@ Ext.define('Rally.technicalservices.window.PrintCards',{
         return styleSheet.innerHTML;
     }
 });
+Ext.define('portfolio-item-selector', {
+    extend : 'Ext.Container',
+    componentCls : 'app',
+    alias : 'widget.portfolioitemselector',
+    layout : 'hbox',
+    width : '100%',
+    mixins : [
+        'Rally.Messageable',
+        'Ext.state.Stateful'
+    ],
+    stateful: true,
+    stateEvents: ['change'],
+
+    type: null,
+    buttonText: 'Go',
+    buttonPushed: false,
+    
+    fieldLabel: '',
+    showGoButton: false,
+
+    constructor : function(config)
+    {
+        this.type = config.type;
+        this.callParent(arguments);
+    },
+    initComponent : function()
+    {
+        this.callParent(arguments);
+        this.removeAll();
+        this._addSelector();
+
+        // configured to allow others to ask what the current selection is,
+        // in case they missed the initial message
+        this.subscribe(this, 'requestPortfolioItem', this._requestPorfolioItem, this);
+
+    },
+    getState: function(){
+        if (this.portfolioItem){
+            return {portfolioItemRef: this.portfolioItem.get('_ref')};
+        }
+        return null;
+    },
+    applyState: function(state) {
+//        if (!Ext.isEmpty(state) && !Ext.Object.isEmpty(state)){
+//            var ref = Ext.create('Rally.util.Ref',state.portfolioItemRef),
+//                type = ref.getType();
+//
+//            //don't apply the state if the type doesn't match.
+//            if (this.type && this.type.toLowerCase() !== type.toLowerCase()){
+//                this._updatePortfolioItem(null);
+//                return;
+//            }
+//
+//            Rally.data.ModelFactory.getModel({
+//                type: type,
+//                scope: this,
+//                success: function(model) {
+//                    model.load(ref.getOid(),{
+//                        scope: this,
+//                        callback: function(result, operation){
+//                            if (result && operation.wasSuccessful()){
+//                                this._updatePortfolioItem(result);
+//                            } else {
+//                                this._updatePortfolioItem(null);
+//                                Rally.ui.notify.Notifier.showError({message: 'Could not load state for item [' + state + ']: ' + operation.error && operation.error.errors.join(',')});
+//                            }
+//
+//                        }
+//                    });
+//                },
+//                failure: function(){
+//                    this._updatePortfolioItem(null);
+//                    Rally.ui.notify.Notifier.showError({message: 'Could not load state for item [' + state + ']'});
+//                }
+//            });
+//        } else {
+//            this._updatePortfolioItem(null);
+//        }
+    },
+    _updatePortfolioItem: function(){
+        this.buttonPushed = true;
+        var cb = this.down('#cb-portfolioitem');
+        
+        if (cb){
+            var portfolioItem = cb.getRecord();
+            this.portfolioItem = portfolioItem;
+            this.fireEvent('change', portfolioItem);
+            this.publish('portfolioItemSelected', portfolioItem);
+
+            if (this.stateful && this.stateId){
+                this.saveState();
+            }
+        }
+
+    },
+    _addSelector : function()
+    {
+        this.removeAll();
+        if (!this.type){
+            this.add({
+                xtype: 'container',
+                html: '<div class="message">Please configure a selector type in the app settings.</div>',
+                padding: 10
+            });
+        } else {
+
+            var cb = Ext.create('Rally.ui.combobox.ComboBox',{
+                storeConfig: {
+                    model: this.type,
+                    fetch: ['FormattedID','ObjectID','Name'],
+                    remoteFilter: false,
+                    autoLoad: true,
+                    limit: Infinity
+                },
+                fieldLabel: this.fieldLabel,
+                labelWidth: 75,
+                allowNoEntry: true,
+                noEntryText: '',
+                noEntryValue: 0,
+                itemId: 'cb-portfolioitem',
+                valueField: 'ObjectID',
+                displayField: 'FormattedID',
+                width: 600,
+                listConfig: {
+                    itemTpl: '<tpl if="ObjectID &gt; 0">{FormattedID}: {Name}</tpl>'
+                },
+                filterProperties: ['Name','FormattedID','ObjectID'],
+                fieldCls: 'pi-selector',
+                displayTpl: '<tpl for=".">' +
+                '<tpl if="ObjectID &gt; 0 ">' +
+                '{[values["FormattedID"]]}: {[values["Name"]]}' +
+                '</tpl>' +
+                '<tpl if="xindex < xcount">,</tpl>' +
+                '</tpl>'
+            });
+
+            this.add(cb);
+
+            if ( this.showGoButton ) {
+                cb.on('change', this._updateGoButton, this);
+                
+                this.add({
+                    xtype: 'rallybutton',
+                    text: this.buttonText,
+                    itemId: 'cb-go-button',
+                    cls: 'rly-small primary',
+                    disabled: true,
+                    margin: 10,
+                    listeners: {
+                        scope: this,
+                        click: this._updatePortfolioItem
+                    }
+                });
+            }
+        }
+    },
+    
+    getValue: function() {
+        return this.down('rallycombobox').getValue();
+    },
+    
+    getRecord: function() {
+        return this.down('rallycombobox').getRecord();
+    },
+    
+    _updateGoButton: function(cb) {
+        if ( !Ext.isEmpty(cb.getValue()) && cb.getValue() > 0 ) {
+            this.down('#cb-go-button').setDisabled(false);
+        } else {
+            this.down('#cb-go-button').setDisabled(true);
+        }
+    },
+    
+    _requestPorfolioItem : function() {
+        // only publish if the go button has been pushed
+        if ( this.buttonPushed ) {
+            this.publish('portfolioItemSelected', this.portfolioItem || null);
+            return;
+        }
+        
+        console.log("Requested PI, but the user hasn't pushed the Go button");
+        
+    }
+});
 Ext.define("TSPrintStoryCards", {
     extend: 'Rally.app.App',
     componentCls: 'app',
     logger: new Rally.technicalservices.Logger(),
     defaults: { margin: 10 },
 
-    layout: 'hbox',
+    layout: 'vbox',
     
     integrationHeaders : {
         name : "TSPrintStoryCards"
     },
-                        
+    
+    config: {
+        defaultSettings: {
+            selectorType: null
+        }
+    },
+    
     launch: function() {
         
-        this.add({
-            xtype:'rallyiterationcombobox',
-            fieldLabel: 'Iteration:',
-            labelWidth: 55,
-            width: 200
+        var container = this.add({
+            xtype:'container',
+            layout: 'hbox'
         });
         
+        container.add({
+            xtype:'rallyiterationcombobox',
+            fieldLabel: 'Iteration:',
+            margin: 10,
+            labelWidth: 55,
+            width: 275,
+            allowClear: true
+        });
+        
+        container.add({
+            xtype: 'portfolioitemselector',
+            context: this.getContext(),
+            type: this.getSetting('selectorType'),
+            stateful: false,
+            stateId: this.getContext().getScopedStateId('app-selector'),
+            width: '75%',
+            margin: 10,
+            fieldLabel: this.getSetting('selectorType').replace(/PortfolioItem\//,'') + ":"
+        });
+            
         this.add({
             xtype: 'rallybutton',
             text:'Print Cards',
@@ -418,21 +626,51 @@ Ext.define("TSPrintStoryCards", {
         var me = this;
         
         var iteration = this.down('rallyiterationcombobox').getRecord();
+        var pi = this.down('portfolioitemselector').getRecord();
+        
+        this.logger.log('pi:', pi);
+        
+        var filters = {};
+        
         if ( iteration ) {
             var iteration_name = iteration.get('Name');
-            this.logger.log('Print Stories from Iteration: ', iteration);
+            this.logger.log('Print Items from Iteration: ', iteration);
+            filters.story  = Ext.create('Rally.data.wsapi.Filter',{property:'Iteration.Name',value:iteration_name});
+            filters.defect = Ext.create('Rally.data.wsapi.Filter',{property:'Iteration.Name',value:iteration_name});
+        }
+        
+        if ( pi && pi.get('ObjectID') > 0 ) {
+            this.logger.log('Print Items from PI:', pi.get('_refObjectName'));
+            var story_filters = Rally.data.wsapi.Filter.or([
+                {property:'Feature.ObjectID',value:pi.get('ObjectID')},
+                {property:'Feature.Parent.ObjectID',value:pi.get('ObjectID')},
+                {property:'Feature.Parent.Parent.ObjectID',value:pi.get('ObjectID')}
+            ]);
             
+            if ( !Ext.isEmpty(filters.story) ) {
+                filters.story = filters.story.and(story_filters);
+            } else {
+                filters.story = story_filters;
+            }
+            
+            filters.defect = { property:'ObjectID', value: 0 }; // can't query defects on pi
+            
+        }
+        
+        if (!Ext.isEmpty(filters) && filters != {} && !Ext.isEmpty(filters.story) ) {
+
             var story_config = {
                 model: 'HierarchicalRequirement',
-                filters: [{property:'Iteration.Name',value:iteration_name}],
-                fetch: Rally.technicalservices.CardConfiguration.fetchFields
-            };
-            var defect_config = {
-                model: 'Defect',
-                filters: [{property:'Iteration.Name',value:iteration_name}],
+                filters: filters.story,
                 fetch: Rally.technicalservices.CardConfiguration.fetchFields
             };
             
+            var defect_config = {
+                model: 'Defect',
+                filters: filters.defect,
+                fetch: Rally.technicalservices.CardConfiguration.fetchFields
+            };
+                
             Deft.Chain.parallel([
                 function() { return me._loadWsapiRecords(story_config); },
                 function() { return me._loadWsapiRecords(defect_config); }
@@ -536,6 +774,28 @@ Ext.define("TSPrintStoryCards", {
         this.logger.log('onSettingsUpdate',settings);
         // Ext.apply(this, settings);
         this.launch();
+    },
+    
+    getSettingsFields: function() {
+        return [{
+            name: 'selectorType',
+            xtype: 'rallycombobox',
+            allowBlank: false,
+            autoSelect: false,
+            fieldLabel: 'Selector Type',
+            //context: context,
+            storeConfig: {
+                model: Ext.identityFn('TypeDefinition'),
+                sorters: [{ property: 'Ordinal' }],
+                fetch: ['DisplayName', 'ElementName', 'TypePath', 'Parent', 'UserListable'],
+                filters: [{property: 'TypePath', operator: 'contains', value: 'PortfolioItem/'}],
+                autoLoad: false,
+                remoteFilter: true
+            },
+            displayField: 'DisplayName',
+            valueField: 'TypePath',
+            readyEvent: 'ready'
+        }];
     }
 });
 
