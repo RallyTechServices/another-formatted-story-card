@@ -95,15 +95,21 @@ body {
     display: block;
     vertical-align: middle;
     text-align: left;
-    height: 2.25in;
+    height: 2.0in;
 }
 
 .r3{
     border: 1px;
+    border-left-style: solid;
+    border-right-style: solid;
     border-bottom-style: solid;
-    height: 0.5in;
+    height: 0.75in;
     padding-left: 0.5em;
     text-align: center;
+    display: table-row;
+    margin-bottom: 2px;
+    font: 14pt / 1.26 Arial, Helvetica, sans-serif;
+    color: #000000;
 }
 
 .r3left {
@@ -112,15 +118,25 @@ body {
     padding-left: 0.5em;
     overflow: hidden;
     border-right: 1px solid #000;
-    width: 2.3in;
+    width: 1.5in;
 }
+
+.r3middle {
+    display: table-cell;
+    padding-top: 0.5em;
+    padding-left: 0.5em;
+    overflow: hidden;
+    width: 2.75in;
+    border-right: 1px solid #000;
+}
+
 
 .r3right {
     display: table-cell;
     padding-top: 0.5em;
     padding-left: 0.5em;
     overflow: hidden;
-    width: 2.3in;
+    width: .5in;
 }
 
 .header {

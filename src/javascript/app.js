@@ -17,41 +17,50 @@ Ext.define("TSPrintStoryCards", {
     },
     
     launch: function() {
-        
-        var container = this.add({
-            xtype:'container',
-            layout: 'hbox'
-        });
-        
-        container.add({
-            xtype:'rallyiterationcombobox',
-            fieldLabel: 'Iteration:',
-            margin: 10,
-            labelWidth: 55,
-            width: 275,
-            allowClear: true
-        });
-        
-        container.add({
-            xtype: 'portfolioitemselector',
-            context: this.getContext(),
-            type: this.getSetting('selectorType'),
-            stateful: false,
-            stateId: this.getContext().getScopedStateId('app-selector'),
-            width: '75%',
-            margin: 10,
-            fieldLabel: this.getSetting('selectorType').replace(/PortfolioItem\//,'') + ":"
-        });
-            
-        this.add({
-            xtype: 'rallybutton',
-            text:'Print Cards',
-            listeners: {
-                scope: this,
-                click: this._printCards
-            }
-        });
-        
+
+        if (this.getSetting('selectorType')){
+            var container = this.add({
+                xtype:'container',
+                layout: 'hbox'
+            });
+
+            container.add({
+                xtype:'rallyiterationcombobox',
+                fieldLabel: 'Iteration:',
+                margin: 10,
+                labelWidth: 55,
+                width: 275,
+                allowClear: true
+            });
+
+            container.add({
+                xtype: 'portfolioitemselector',
+                context: this.getContext(),
+                type: this.getSetting('selectorType'),
+                stateful: false,
+                stateId: this.getContext().getScopedStateId('app-selector'),
+                width: '75%',
+                margin: 10,
+                fieldLabel: this.getSetting('selectorType').replace(/PortfolioItem\//,'') + ":"
+            });
+
+            this.add({
+                xtype: 'rallybutton',
+                text:'Print Cards',
+                listeners: {
+                    scope: this,
+                    click: this._printCards
+                }
+            });
+
+        } else {
+            this.add({
+                xtype: 'container',
+                html: '<div class="no-data-container"><div class="secondary-message">Please configure the app settings and choose a selector type.</div></div>'
+            });
+        }
+
+
     },
     
     _printCards: function() {
