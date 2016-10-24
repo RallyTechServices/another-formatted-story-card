@@ -3,11 +3,11 @@
 <head>
     <title>TS Print Story Cards</title>
     <!--  (c) 2015,2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon May 09 2016 17:24:30 GMT-0700 (PDT) -->
+    <!--  Build Date: Mon Oct 24 2016 14:11:32 GMT-0600 (MDT) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon May 09 2016 17:24:30 GMT-0700 (PDT)";
-        var CHECKSUM = 16322953495;
+        var APP_BUILD_DATE = "Mon Oct 24 2016 14:11:32 GMT-0600 (MDT)";
+        var CHECKSUM = 17783952749;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -180,7 +180,7 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
     singleton: true,
 
     fetchFields: ["FormattedID","Name","Feature","Description",
-        "Release","PlanEstimate",'c_ExtID01QCRequirement','Requirement'],
+        "Release","PlanEstimate",'c_ExtID01QCRequirement','Requirement','Owner','Project'],
                 
     displayFields: {
         r1left: { 
@@ -231,6 +231,14 @@ Ext.define('Rally.technicalservices.CardConfiguration',{
                 return 'QC: ' + qc_id;
             }
         },
+        r3middle: {
+            dataIndex: function(recordData){
+                var project = recordData.get('Project')._refObjectName,
+                    owner = recordData.get('Owner') && recordData.get('Owner')._refObjectName;
+
+                return project + '</br>' + owner;
+            }
+        },
         r3right: {
             dataIndex: function(recordData) {
                 return recordData.get('PlanEstimate');
@@ -268,6 +276,9 @@ Ext.define('Rally.technicalservices.CardTemplate',{
                 '<div class="r3">',
                     '<tpl if="this.displayFields.r3left>',
                         '<span class="r3left">{[this.getContent(values, this.displayFields.r3left)]}</span>',
+                    '</tpl>',
+                    '<tpl if="this.displayFields.r3middle>',
+                        '<span class="r3middle">{[this.getContent(values, this.displayFields.r3middle)]}</span>',
                     '</tpl>',
                     '<tpl if="this.displayFields.r3right">',
                         '<span class="r3right">{[this.getContent(values, this.displayFields.r3right)]}</span>',
@@ -379,7 +390,7 @@ Ext.define('Rally.technicalservices.window.PrintCards',{
                 styleSheet = elems[i];
             }
         }
-        return styleSheet.innerHTML;
+        return styleSheet && styleSheet.innerHTML;
     }
 });
 Ext.define('portfolio-item-selector', {
@@ -585,41 +596,50 @@ Ext.define("TSPrintStoryCards", {
     },
     
     launch: function() {
-        
-        var container = this.add({
-            xtype:'container',
-            layout: 'hbox'
-        });
-        
-        container.add({
-            xtype:'rallyiterationcombobox',
-            fieldLabel: 'Iteration:',
-            margin: 10,
-            labelWidth: 55,
-            width: 275,
-            allowClear: true
-        });
-        
-        container.add({
-            xtype: 'portfolioitemselector',
-            context: this.getContext(),
-            type: this.getSetting('selectorType'),
-            stateful: false,
-            stateId: this.getContext().getScopedStateId('app-selector'),
-            width: '75%',
-            margin: 10,
-            fieldLabel: this.getSetting('selectorType').replace(/PortfolioItem\//,'') + ":"
-        });
-            
-        this.add({
-            xtype: 'rallybutton',
-            text:'Print Cards',
-            listeners: {
-                scope: this,
-                click: this._printCards
-            }
-        });
-        
+
+        if (this.getSetting('selectorType')){
+            var container = this.add({
+                xtype:'container',
+                layout: 'hbox'
+            });
+
+            container.add({
+                xtype:'rallyiterationcombobox',
+                fieldLabel: 'Iteration:',
+                margin: 10,
+                labelWidth: 55,
+                width: 275,
+                allowClear: true
+            });
+
+            container.add({
+                xtype: 'portfolioitemselector',
+                context: this.getContext(),
+                type: this.getSetting('selectorType'),
+                stateful: false,
+                stateId: this.getContext().getScopedStateId('app-selector'),
+                width: '75%',
+                margin: 10,
+                fieldLabel: this.getSetting('selectorType').replace(/PortfolioItem\//,'') + ":"
+            });
+
+            this.add({
+                xtype: 'rallybutton',
+                text:'Print Cards',
+                listeners: {
+                    scope: this,
+                    click: this._printCards
+                }
+            });
+
+        } else {
+            this.add({
+                xtype: 'container',
+                html: '<div class="no-data-container"><div class="secondary-message">Please configure the app settings and choose a selector type.</div></div>'
+            });
+        }
+
+
     },
     
     _printCards: function() {
@@ -905,15 +925,21 @@ body {
     display: block;
     vertical-align: middle;
     text-align: left;
-    height: 2.25in;
+    height: 2.0in;
 }
 
 .r3{
     border: 1px;
+    border-left-style: solid;
+    border-right-style: solid;
     border-bottom-style: solid;
-    height: 0.5in;
+    height: 0.75in;
     padding-left: 0.5em;
     text-align: center;
+    display: table-row;
+    margin-bottom: 2px;
+    font: 14pt / 1.26 Arial, Helvetica, sans-serif;
+    color: #000000;
 }
 
 .r3left {
@@ -922,15 +948,25 @@ body {
     padding-left: 0.5em;
     overflow: hidden;
     border-right: 1px solid #000;
-    width: 2.3in;
+    width: 1.5in;
 }
+
+.r3middle {
+    display: table-cell;
+    padding-top: 0.5em;
+    padding-left: 0.5em;
+    overflow: hidden;
+    width: 2.75in;
+    border-right: 1px solid #000;
+}
+
 
 .r3right {
     display: table-cell;
     padding-top: 0.5em;
     padding-left: 0.5em;
     overflow: hidden;
-    width: 2.3in;
+    width: .5in;
 }
 
 .header {

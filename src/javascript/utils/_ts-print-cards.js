@@ -79,6 +79,6 @@ Ext.define('Rally.technicalservices.window.PrintCards',{
                 styleSheet = elems[i];
             }
         }
-        return styleSheet.innerHTML;
+        return styleSheet && styleSheet.innerHTML;
     }
 });
